@@ -3,7 +3,7 @@ Author: Emmanuel Bourg <ebourg@apache.org>
 Bug: https://issues.apache.org/jira/browse/MCOMPILER-397
 --- a/src/main/java/org/apache/maven/plugin/compiler/AbstractCompilerMojo.java
 +++ b/src/main/java/org/apache/maven/plugin/compiler/AbstractCompilerMojo.java
-@@ -998,7 +998,7 @@
+@@ -1078,7 +1078,7 @@
                  if ( value == null )
                  {
                      entry = entryIter.next();

@@ -25,12 +25,12 @@ under the License.
   <parent>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-plugins</artifactId>
-    <version>33</version>
-    <relativePath>../../pom/maven/maven-plugins/pom.xml</relativePath>
+    <version>34</version>
+    <relativePath />
   </parent>
 
   <artifactId>maven-compiler-plugin</artifactId>
-  <version>3.8.1</version>
+  <version>3.10.1</version>
   <packaging>maven-plugin</packaging>
 
   <name>Apache Maven Compiler Plugin</name>
@@ -42,10 +42,10 @@ under the License.
   </prerequisites>
 
   <scm>
-    <connection>scm:git:https://gitbox.apache.org/repos/asf/maven-compiler-plugin.git</connection>
-    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/maven-compiler-plugin.git</developerConnection>
+    <connection>scm:git:https://github.com/apache/maven-compiler-plugin.git</connection>
+    <developerConnection>scm:git:https://github.com/apache/maven-compiler-plugin.git</developerConnection>
     <url>https://github.com/apache/maven-compiler-plugin/tree/${project.scm.tag}</url>
-    <tag>maven-compiler-plugin-3.8.1</tag>
+    <tag>maven-compiler-plugin-3.10.1</tag>
   </scm>
   <issueManagement>
     <system>JIRA</system>
@@ -53,7 +53,7 @@ under the License.
   </issueManagement>
   <ciManagement>
     <system>Jenkins</system>
-    <url>https://builds.apache.org/job/maven-box/job/maven-compiler-plugin/</url>
+    <url>https://ci-builds.apache.org/job/Maven/job/maven-box/job/maven-compiler-plugin/</url>
   </ciManagement>
   <distributionManagement>
     <site>
@@ -63,18 +63,22 @@ under the License.
   </distributionManagement>
 
   <properties>
-    <mavenVersion>3.0</mavenVersion>
+    <mavenVersion>3.2.5</mavenVersion>
     <!--
       ! The following property is used in the integration tests MCOMPILER-157
     -->
     <mavenPluginPluginVersion>3.5</mavenPluginPluginVersion>
-    <plexusCompilerVersion>2.8.4</plexusCompilerVersion>
-    <groovyVersion>1.8.0</groovyVersion>
-    <groovyEclipseCompilerVersion>2.7.0-01</groovyEclipseCompilerVersion>
-    <groovy-eclipse-batch>2.0.4-04</groovy-eclipse-batch>
-    <openJpaVersion>2.4.2</openJpaVersion>
-    <javaVersion>7</javaVersion>
+    <plexusCompilerVersion>2.11.1</plexusCompilerVersion>
+
+    <groovyVersion>2.4.21</groovyVersion>
+    <groovyEclipseCompilerVersion>3.7.0</groovyEclipseCompilerVersion>
+    <groovy-eclipse-batch>2.5.14-02</groovy-eclipse-batch>
+    <plexus-java.version>1.1.1</plexus-java.version>
+    <javaVersion>8</javaVersion>
     <maven.it.failure.ignore>false</maven.it.failure.ignore>
+    <surefire.version>2.22.2</surefire.version>
+    <mavenPluginToolsVersion>3.6.2</mavenPluginToolsVersion>
+    <project.build.outputTimestamp>2022-03-08T01:03:47Z</project.build.outputTimestamp>
   </properties>
 
   <contributors>
@@ -83,13 +87,26 @@ under the License.
     </contributor>
   </contributors>
 
+  <repositories>
+    <repository>
+      <id>plexus.snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/plexus-snapshots</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
         <!-- to remove when using plexus-java-1.0.0 -->
         <groupId>com.thoughtworks.qdox</groupId>
         <artifactId>qdox</artifactId>
-        <version>2.0-M9</version>
+        <version>2.0.1</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -104,32 +121,49 @@ under the License.
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
       <version>${mavenVersion}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
       <version>${mavenVersion}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
       <version>${mavenVersion}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.shared</groupId>
       <artifactId>maven-shared-utils</artifactId>
-      <version>3.2.1</version>
+      <version>3.3.4</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.shared</groupId>
       <artifactId>maven-shared-incremental</artifactId>
       <version>1.1</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>maven-core</artifactId>
+          <groupId>org.apache.maven</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>maven-plugin-api</artifactId>
+          <groupId>org.apache.maven</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>maven-shared-utils</artifactId>
+          <groupId>org.apache.maven.shared</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-java</artifactId>
-      <version>0.9.10</version>
+      <version>${plexus-java.version}</version>
     </dependency>
 
     <dependency>
@@ -170,7 +204,7 @@ under the License.
     <dependency>
       <groupId>org.apache.maven.plugin-testing</groupId>
       <artifactId>maven-plugin-testing-harness</artifactId>
-      <version>2.1</version>
+      <version>3.3.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -182,13 +216,13 @@ under the License.
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>1.9.5</version>
+      <version>4.3.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.12</version>
+      <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -207,14 +241,14 @@ under the License.
         </plugin>
         <plugin>
           <artifactId>maven-enforcer-plugin</artifactId>
-          <version>1.4.1</version>
+          <version>3.0.0-M3</version>
           <executions>
             <execution>
               <id>enforce-bytecode-version</id>
               <configuration>
                 <rules>
                   <enforceBytecodeVersion>
-                    <maxJdkVersion>1.6</maxJdkVersion>
+                    <maxJdkVersion>${javaVersion}</maxJdkVersion>
                     <excludes>
                       <exclude>org.ow2.asm:asm</exclude>
                     </excludes>
@@ -225,13 +259,36 @@ under the License.
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-invoker-plugin</artifactId>
+          <version>3.2.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jxr-plugin</artifactId>
+          <version>3.1.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.3.2</version>
+          <configuration> <!--  remove after MPOM-269 -->
+            <tagletArtifacts combine.self="override" />
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>3.0.0-M5</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-component-metadata</artifactId>
-        <version>1.7.1</version>
+        <version>2.1.1</version>
         <executions>
           <execution>
             <id>descriptors</id>
@@ -253,7 +310,6 @@ under the License.
             <plugin>
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-invoker-plugin</artifactId>
-              <version>3.2.0</version>
               <executions>
                 <execution>
                   <id>integration-test</id>
@@ -285,6 +341,7 @@ under the License.
                     <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
                     <settingsFile>src/it/settings.xml</settingsFile>
                     <ignoreFailures>${maven.it.failure.ignore}</ignoreFailures>
+                    <streamLogsOnFailures>true</streamLogsOnFailures>
                     <properties>
                       <!-- e.g. ensure that Java7 picks up TLSv1.2 when connecting with Central -->
                       <https.protocols>${https.protocols}</https.protocols>
@@ -296,59 +353,6 @@ under the License.
                   </configuration>
                 </execution>
               </executions>
-            </plugin>
-          </plugins>
-        </pluginManagement>
-      </build>
-      <!--
-      add those dependency just to have faster it test (for folks who doesn't have those locally
-      they will be downloaded from local repo rather than central
-      -->
-      <dependencies>
-        <dependency>
-          <groupId>org.codehaus.groovy</groupId>
-          <artifactId>groovy-eclipse-compiler</artifactId>
-          <version>${groovyEclipseCompilerVersion}</version>
-          <scope>test</scope>
-        </dependency>
-        <dependency>
-          <groupId>org.codehaus.groovy</groupId>
-          <artifactId>groovy-eclipse-batch</artifactId>
-          <version>${groovy-eclipse-batch}</version>
-          <scope>test</scope>
-        </dependency>
-        <dependency>
-          <groupId>org.codehaus.groovy</groupId>
-          <artifactId>groovy-all</artifactId>
-          <version>${groovyVersion}</version>
-          <scope>test</scope>
-        </dependency>
-        <dependency>
-          <groupId>org.apache.openjpa</groupId>
-          <artifactId>openjpa</artifactId>
-          <version>${openJpaVersion}</version>
-          <!-- TODO: scope test? -->
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>Jenkins</id>
-      <activation>
-        <property>
-          <name>env.JENKINS_URL</name>
-        </property>
-      </activation>
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-invoker-plugin</artifactId>
-              <configuration>
-                <pomExcludes>
-                  <pomExclude>multirelease-patterns/singleproject-toolchains/pom.xml</pomExclude>
-                </pomExcludes>
-              </configuration>
             </plugin>
           </plugins>
         </pluginManagement>

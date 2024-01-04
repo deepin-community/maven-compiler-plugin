@@ -33,7 +33,6 @@ import java.util.Map.Entry;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -48,9 +47,9 @@ import org.codehaus.plexus.compiler.util.scan.SourceInclusionScanner;
 import org.codehaus.plexus.compiler.util.scan.StaleSourceScanner;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
+import org.codehaus.plexus.languages.java.jpms.ModuleNameSource;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsResult;
-import org.codehaus.plexus.languages.java.jpms.ResolvePathsResult.ModuleNameSource;
 
 /**
  * Compiles application sources
@@ -116,16 +115,28 @@ public class CompilerMojo
     private List<String> compilePath;
 
     /**
-     * When set to {@code true}, the classes will be placed in <code>META-INF/versions/${release}</code>
-     * The release value must be set, otherwise the plugin will fail. 
+     * <p>
+     * When set to {@code true}, the classes will be placed in <code>META-INF/versions/${release}</code> The release
+     * value must be set, otherwise the plugin will fail.
+     * </p>
+     * <strong>Note: </strong> A jar is only a multirelease jar if <code>META-INF/MANIFEST.MF</code> contains
+     * <code>Multi-Release: true</code>. You need to set this by configuring the <a href=
+     * "https://maven.apache.org/plugins/maven-jar-plugin/examples/manifest-customization.html">maven-jar-plugin</a>.
+     * This implies that you cannot test a multirelease jar using the outputDirectory.
      * 
      * @since 3.7.1
      */
     @Parameter
     private boolean multiReleaseOutput;
 
-    @Component
-    private LocationManager locationManager;
+    /**
+     * when forking and debug activated the commandline used will be dumped in this file
+     * @since 3.10.0
+     */
+    @Parameter( defaultValue = "javac" )
+    private String debugFileName;
+
+    final LocationManager locationManager = new LocationManager();
 
     private List<String> classpathElements;
 
@@ -227,10 +238,11 @@ public class CompilerMojo
                 
                 ResolvePathsRequest<File> request =
                     ResolvePathsRequest.ofFiles( dependencyArtifacts )
+                                       .setIncludeStatic( true )
                                        .setMainModuleDescriptor( moduleDescriptorPath );
                 
                 Toolchain toolchain = getToolchain();
-                if ( toolchain != null && toolchain instanceof DefaultJavaToolChain )
+                if ( toolchain instanceof DefaultJavaToolChain )
                 {
                     request.setJdkHome( new File( ( (DefaultJavaToolChain) toolchain ).getJavaHome() ) );
                 }
@@ -256,27 +268,22 @@ public class CompilerMojo
                 {
                     pathElements.put( entry.getKey().getPath(), entry.getValue() );
                 }
-                
+
+                if ( compilerArgs == null )
+                {
+                    compilerArgs = new ArrayList<>();
+                }
+
                 for ( File file : resolvePathsResult.getClasspathElements() )
                 {
                     classpathElements.add( file.getPath() );
                     
                     if ( multiReleaseOutput )
                     {
-                        if ( compilerArgs == null )
-                        {
-                            compilerArgs = new ArrayList<>();
-                        }
-                        
                         if ( getOutputDirectory().toPath().startsWith( file.getPath() ) )
                         {
                             compilerArgs.add( "--patch-module" );
-                            
-                            StringBuilder patchModuleValue = new StringBuilder( moduleDescriptor.name() )
-                                            .append( '=' )
-                                            .append( file.getPath() );
-                            
-                            compilerArgs.add( patchModuleValue.toString() );
+                            compilerArgs.add( String.format( "%s=%s", moduleDescriptor.name(), file.getPath() ) );
                         }
                     }
                 }
@@ -286,10 +293,6 @@ public class CompilerMojo
                     modulepathElements.add( file.getPath() );
                 }
                 
-                if ( compilerArgs == null )
-                {
-                    compilerArgs = new ArrayList<>();
-                }
                 compilerArgs.add( "--module-version" );
                 compilerArgs.add( getProject().getVersion() );
                 
@@ -301,7 +304,11 @@ public class CompilerMojo
         }
         else
         {
-            classpathElements = compilePath;
+            classpathElements = new ArrayList<>();
+            for ( File element : getCompileClasspathElements( getProject() ) )
+            {
+                classpathElements.add( element.getPath() );
+            }
             modulepathElements = Collections.emptyList();
         }
     }
@@ -368,46 +375,30 @@ public class CompilerMojo
     
     protected SourceInclusionScanner getSourceInclusionScanner( int staleMillis )
     {
-        SourceInclusionScanner scanner;
-
         if ( includes.isEmpty() && excludes.isEmpty() )
         {
-            scanner = new StaleSourceScanner( staleMillis );
-        }
-        else
-        {
-            if ( includes.isEmpty() )
-            {
-                includes.add( "**/*.java" );
-            }
-            scanner = new StaleSourceScanner( staleMillis, includes, excludes );
+            return new StaleSourceScanner( staleMillis );
         }
 
-        return scanner;
+        if ( includes.isEmpty() )
+        {
+            includes.add( "**/*.java" );
+        }
+
+        return new StaleSourceScanner( staleMillis, includes, excludes );
     }
 
     protected SourceInclusionScanner getSourceInclusionScanner( String inputFileEnding )
     {
-        SourceInclusionScanner scanner;
-
         // it's not defined if we get the ending with or without the dot '.'
         String defaultIncludePattern = "**/*" + ( inputFileEnding.startsWith( "." ) ? "" : "." ) + inputFileEnding;
 
-        if ( includes.isEmpty() && excludes.isEmpty() )
+        if ( includes.isEmpty() )
         {
-            includes = Collections.singleton( defaultIncludePattern );
-            scanner = new SimpleSourceInclusionScanner( includes, Collections.<String>emptySet() );
-        }
-        else
-        {
-            if ( includes.isEmpty() )
-            {
-                includes.add( defaultIncludePattern );
-            }
-            scanner = new SimpleSourceInclusionScanner( includes, excludes );
+            includes.add( defaultIncludePattern );
         }
 
-        return scanner;
+        return new SimpleSourceInclusionScanner( includes, excludes );
     }
 
     protected String getSource()
@@ -441,6 +432,12 @@ public class CompilerMojo
         return generatedSourcesDirectory;
     }
 
+    @Override
+    protected String getDebugFileName()
+    {
+        return debugFileName;
+    }
+
     private void writeBoxedWarning( String message )
     {
         String line = StringUtils.repeat( "*", message.length() + 4 );
@@ -448,4 +445,7 @@ public class CompilerMojo
         getLog().warn( "* " + MessageUtils.buffer().strong( message )  + " *" );
         getLog().warn( line );
     }
+
+
+
 }
