@@ -34,7 +34,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -154,14 +153,18 @@ public class TestCompilerMojo
     @Parameter ( defaultValue = "${project.build.directory}/generated-test-sources/test-annotations" )
     private File generatedTestSourcesDirectory;
 
-    @Parameter( defaultValue = "${project.compileClasspathElements}", readonly = true )
-    private List<String> compilePath;
-
     @Parameter( defaultValue = "${project.testClasspathElements}", readonly = true )
     private List<String> testPath;
 
-    @Component
-    private LocationManager locationManager;
+
+    /**
+     * when forking and debug activated the commandline used will be dumped in this file
+     * @since 3.10.0
+     */
+    @Parameter( defaultValue = "javac-test" )
+    private String debugFileName;
+
+    final LocationManager locationManager = new LocationManager();
 
     private Map<String, JavaModuleDescriptor> pathElements;
     
@@ -238,10 +241,11 @@ public class TestCompilerMojo
             {
                 ResolvePathsRequest<String> request =
                         ResolvePathsRequest.ofStrings( testPath )
+                                .setIncludeStatic( true )
                                 .setMainModuleDescriptor( mainModuleDescriptorClassFile.getAbsolutePath() );
 
                 Toolchain toolchain = getToolchain();
-                if ( toolchain != null && toolchain instanceof DefaultJavaToolChain )
+                if ( toolchain instanceof DefaultJavaToolChain )
                 {
                     request.setJdkHome( ( (DefaultJavaToolChain) toolchain ).getJavaHome() );
                 }
@@ -250,7 +254,7 @@ public class TestCompilerMojo
                 
                 for ( Entry<String, Exception> pathException : result.getPathExceptions().entrySet() )
                 {
-                    Throwable cause = pathException.getValue().getCause();
+                    Throwable cause = pathException.getValue();
                     while ( cause.getCause() != null )
                     {
                         cause = cause.getCause();
@@ -285,7 +289,7 @@ public class TestCompilerMojo
                                 .setMainModuleDescriptor( testModuleDescriptorJavaFile.getAbsolutePath() );
 
                 Toolchain toolchain = getToolchain();
-                if ( toolchain != null && toolchain instanceof DefaultJavaToolChain )
+                if ( toolchain instanceof DefaultJavaToolChain )
                 {
                     request.setJdkHome( ( (DefaultJavaToolChain) toolchain ).getJavaHome() );
                 }
@@ -336,7 +340,7 @@ public class TestCompilerMojo
                 {
                     if ( compilerArgs == null )
                     {
-                        compilerArgs = new ArrayList<String>();
+                        compilerArgs = new ArrayList<>();
                     }
                     compilerArgs.add( "--patch-module" );
 
@@ -380,7 +384,7 @@ public class TestCompilerMojo
             {
                 if ( compilerArgs == null )
                 {
-                    compilerArgs = new ArrayList<String>();
+                    compilerArgs = new ArrayList<>();
                 }
                 compilerArgs.add( "--patch-module" );
                 
@@ -479,6 +483,12 @@ public class TestCompilerMojo
     protected File getGeneratedSourcesDirectory()
     {
         return generatedTestSourcesDirectory;
+    }
+
+    @Override
+    protected String getDebugFileName()
+    {
+        return debugFileName;
     }
 
     @Override

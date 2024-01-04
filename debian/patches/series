@@ -1,3 +1,2 @@
 01-fix-wrong-junit-path.patch
 02-reproducible-jpms-args.patch
-MCOMPILER-379.patch
