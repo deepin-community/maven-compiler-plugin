@@ -1,3 +1,28 @@
+maven-compiler-plugin (3.10.1-2) unstable; urgency=medium
+
+  * Team upload.
+  * Depend on libmaven-parent-java to fix a build failure
+
+ -- Emmanuel Bourg <ebourg@apache.org>  Thu, 12 Jan 2023 11:13:06 +0100
+
+maven-compiler-plugin (3.10.1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release
+    - Refreshed the patches
+    - Depend on libplexus-languages-java (>= 1.1.1-2~)
+
+ -- Emmanuel Bourg <ebourg@apache.org>  Fri, 06 Jan 2023 13:46:12 +0100
+
+maven-compiler-plugin (3.8.1-5) unstable; urgency=medium
+
+  * Team upload.
+  * Depend on libplexus-languages-0.9-java instead of libplexus-languages-java
+  * Standards-Version updated to 4.6.2
+  * Switch to debhelper level 13
+
+ -- Emmanuel Bourg <ebourg@apache.org>  Sat, 24 Dec 2022 12:03:54 +0100
+
 maven-compiler-plugin (3.8.1-4) unstable; urgency=medium
 
   * Team upload.
